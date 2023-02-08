@@ -8,6 +8,8 @@ import 'package:pokemon/constants.dart';
 import 'package:pokemon/repository/pokemon_repository.dart';
 
 import '../../../api/model/pokemon.dart';
+import '../../../api/request/pokemon_request.dart';
+import '../../../api/response/pokemon_response.dart';
 
 part 'home_event.dart';
 
@@ -20,15 +22,27 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required this.pokemonRepository,
   }) : super(const HomeState.initial()) {
     on<HomeLoadScreenEvent>(loadScreen);
+    on<HomeLoadPokemonEvent>(loadPokemon);
   }
 
   loadScreen(HomeLoadScreenEvent event, emit) async {
-    final request = PokemonListRequest(limit: Config.pokemonLimit, offset: state.offset);
+    final request = PokemonListRequest(limit: Constants.pokemonLimit, offset: state.offset);
     final response = await pokemonRepository.getPokemonList(request: request);
+    final pokemon = response.results.first.name;
     emit(state.copyWith(
       pokemonList: response.results,
-      selected: {response.results.first.name},
-      offset: state.offset + Config.pokemonLimit,
+      selected: {pokemon},
+      offset: state.offset + Constants.pokemonLimit,
+    ));
+    await loadPokemon(HomeLoadPokemonEvent(name: pokemon), emit);
+  }
+
+  loadPokemon(HomeLoadPokemonEvent event, emit) async {
+    final request = PokemonRequest(name: event.name);
+    final response = await pokemonRepository.getPokemon(request: request);
+    emit(state.copyWith(
+      selected: {response.name},
+      pokemon: response,
     ));
   }
 }
