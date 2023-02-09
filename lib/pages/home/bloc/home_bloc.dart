@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 
 import 'package:meta/meta.dart';
@@ -28,33 +29,42 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   loadScreen(HomeLoadScreenEvent event, emit) async {
+    await emit(state.copyWith(isLoading: true));
     final request = PokemonListRequest(limit: Constants.pokemonLimit, offset: state.offset);
-    final response = await pokemonRepository.getPokemonList(request: request);
-    final pokemon = response.results.first.name;
-    emit(state.copyWith(
-      pokemonList: response.results,
-      selected: {pokemon},
-      offset: state.offset + Constants.pokemonLimit,
-      loading: true,
-    ));
-    await loadPokemon(HomeLoadPokemonEvent(name: pokemon), emit);
+    try {
+      final response = await pokemonRepository.getPokemonList(request: request);
+      final pokemon = response.results.first.name;
+      await emit(state.copyWith(
+        pokemonList: response.results,
+        selected: {pokemon},
+        offset: state.offset + Constants.pokemonLimit,
+        isLoading: true,
+      ));
+      await loadPokemon(HomeLoadPokemonEvent(name: pokemon), emit);
+    } on DioError catch (_) {
+      await emit(const HomeState.initial().copyWith(isError: true, isLoading: false));
+    }
   }
 
   loadPokemon(HomeLoadPokemonEvent event, emit) async {
-    emit(state.copyWith(loading: true));
-    if (!state.pokemonMap.containsKey(event.name)) {
-      final request = PokemonRequest(name: event.name);
-      final response = await pokemonRepository.getPokemon(request: request);
-      return emit(state.copyWith(
-        selected: {response.name},
-        pokemonMap: _getPokemonMapReplacing(response),
-        loading: false,
+    try {
+      await emit(state.copyWith(isLoading: true));
+      if (!state.pokemonMap.containsKey(event.name)) {
+        final request = PokemonRequest(name: event.name);
+        final response = await pokemonRepository.getPokemon(request: request);
+        return await emit(state.copyWith(
+          selected: {response.name},
+          pokemonMap: _getPokemonMapReplacing(response),
+          isLoading: false,
+        ));
+      }
+      return await emit(state.copyWith(
+        selected: {event.name},
+        isLoading: false,
       ));
+    } on DioError catch (_) {
+      await emit(const HomeState.initial().copyWith(isError: true, isLoading: false));
     }
-    return emit(state.copyWith(
-      selected: {event.name},
-      loading: false,
-    ));
   }
 
   addRemoveSkill(HomeAddRemoveSkillEvent event, emit) async {
@@ -66,7 +76,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       skills: skills,
       sprites: state.pokemonMap[event.pokemon]!.sprites,
     );
-    emit(state.copyWith(pokemonMap: _getPokemonMapReplacing(pokemon)));
+    await emit(state.copyWith(pokemonMap: _getPokemonMapReplacing(pokemon)));
   }
 
   Map<String, PokemonResponse> _getPokemonMapReplacing(PokemonResponse pokemon) {

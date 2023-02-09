@@ -23,18 +23,48 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loadingImage = Image.asset(
+      'assets/images/pokeball.gif',
+      width: Constants.imageSize,
+      height: Constants.imageSize,
+    );
+
+    final loadingView = Scaffold(
+        body: Center(
+      child: loadingImage,
+    ));
+
     return BlocProvider(
       create: (context) => HomeBloc(
         pokemonRepository: context.read<PokemonRepository>(),
       )..add(HomeLoadScreenEvent()),
       child: BlocBuilder<HomeBloc, HomeState>(
         builder: (context, state) {
+          if (state.isError) {
+            return Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Center(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    children: [
+                      const Text('Algo salió mal, revisar conexión a internet y reintenter'),
+                      ElevatedButton(
+                        onPressed: () => context.read<HomeBloc>().add(HomeLoadScreenEvent()),
+                        child: const Text('reintentar'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
           if (state.selected.isEmpty) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+            return loadingView;
           }
           final pokemon = state.pokemonMap[state.selected.first];
           return pokemon == null
-              ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+              ? loadingView
               : RefreshIndicator(
                   onRefresh: () {
                     return Future.delayed(
@@ -46,8 +76,7 @@ class HomePage extends StatelessWidget {
                         child: Column(
                           children: [
                             Text(state.selected.first.toUpperCase(),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 32)
-                            ),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 32)),
                             const SizedBox(height: Constants.spaceBetween),
                             SegmentedButton(
                               segments: _getPokemonSegments(state.pokemonList),
@@ -57,8 +86,8 @@ class HomePage extends StatelessWidget {
                               },
                             ),
                             const SizedBox(height: Constants.spaceBetween),
-                            state.loading
-                                ? const Center(child: CircularProgressIndicator())
+                            state.isLoading
+                                ? loadingView
                                 : Column(
                                     children: [
                                       const Text('HABILIDADES', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -70,28 +99,33 @@ class HomePage extends StatelessWidget {
                                         crossAxisCount: 3,
                                         children: Constants.skills
                                             .map((skill) => Center(
-                                              child: pokemon.skills.contains(skill)
-                                                  ? ElevatedButton(
-                                                onPressed: () => context.read<HomeBloc>().add(HomeAddRemoveSkillEvent(
-                                                    pokemon: pokemon.name, skill: skill)),
-                                                child: Text(skill.name),
-                                              )
-                                                  : OutlinedButton(
-                                                onPressed: () => context.read<HomeBloc>().add(HomeAddRemoveSkillEvent(
-                                                    pokemon: pokemon.name, skill: skill)),
-                                                child: Text(
-                                                  skill.name,
-                                                  style: const TextStyle(color: Colors.grey),
-                                                ),
-                                              ),
-                                            ))
+                                                  child: pokemon.skills.contains(skill)
+                                                      ? ElevatedButton(
+                                                          onPressed: () => context.read<HomeBloc>().add(
+                                                              HomeAddRemoveSkillEvent(
+                                                                  pokemon: pokemon.name, skill: skill)),
+                                                          child: Text(skill.name),
+                                                        )
+                                                      : OutlinedButton(
+                                                          onPressed: () => context.read<HomeBloc>().add(
+                                                              HomeAddRemoveSkillEvent(
+                                                                  pokemon: pokemon.name, skill: skill)),
+                                                          child: Text(
+                                                            skill.name,
+                                                            style: const TextStyle(color: Colors.grey),
+                                                          ),
+                                                        ),
+                                                ))
                                             .toList(),
                                       ),
                                       const SizedBox(height: Constants.spaceBetween),
                                       SvgPicture.network(
                                         pokemon.sprites.other.dreamWorld.front,
                                         width: Constants.imageSize,
+                                        height: Constants.imageSize,
                                         fit: BoxFit.fitWidth,
+                                        //placeholderBuilder: (context) => const Icon(Icons.sports_baseball, size: 200, color: Colors.red,),
+                                        placeholderBuilder: (context) => loadingImage,
                                       ),
                                       const SizedBox(height: Constants.spaceBetween),
                                       Container(width: double.infinity, height: 2, color: Colors.black26),
