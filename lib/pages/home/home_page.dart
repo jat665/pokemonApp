@@ -29,9 +29,12 @@ class HomePage extends StatelessWidget {
       )..add(HomeLoadScreenEvent()),
       child: BlocBuilder<HomeBloc, HomeState>(
         builder: (context, state) {
-          final pokemon = state.pokemon;
+          if (state.selected.isEmpty) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          final pokemon = state.pokemonMap[state.selected.first];
           return pokemon == null
-              ? const CircularProgressIndicator()
+              ? const Scaffold(body: Center(child: CircularProgressIndicator()))
               : Scaffold(
                   appBar: AppBar(
                     title: Text(pokemon.name),
@@ -56,15 +59,13 @@ class HomePage extends StatelessWidget {
                           itemBuilder: (context, int index) => Center(
                               child: pokemon.skills.contains(Constants.skills[index])
                                   ? ElevatedButton(
-                                      onPressed: () => context
-                                          .read<HomeBloc>()
-                                          .add(HomeAddRemoveSkillEvent(skill: Constants.skills[index])),
+                                      onPressed: () => context.read<HomeBloc>().add(HomeAddRemoveSkillEvent(
+                                          pokemon: pokemon.name, skill: Constants.skills[index])),
                                       child: Text(Constants.skills[index].name),
                                     )
                                   : OutlinedButton(
-                                      onPressed: () => context
-                                          .read<HomeBloc>()
-                                          .add(HomeAddRemoveSkillEvent(skill: Constants.skills[index])),
+                                      onPressed: () => context.read<HomeBloc>().add(HomeAddRemoveSkillEvent(
+                                          pokemon: pokemon.name, skill: Constants.skills[index])),
                                       child: Text(
                                         Constants.skills[index].name,
                                         style: const TextStyle(color: Colors.grey),

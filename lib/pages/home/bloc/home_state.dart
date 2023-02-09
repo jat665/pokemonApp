@@ -5,33 +5,33 @@ class HomeState extends Equatable {
   final int offset;
   final List<Pokemon> pokemonList;
   final Set<String> selected;
-  final PokemonResponse? pokemon;
+  final Map<String, PokemonResponse> pokemonMap;
 
   const HomeState({
     required this.offset,
     required this.pokemonList,
     required this.selected,
-    required this.pokemon,
+    required this.pokemonMap,
   });
 
   const HomeState.initial({
     this.offset = 0,
     this.pokemonList = const [],
     this.selected = const {},
-    this.pokemon,
+    this.pokemonMap = const {},
   });
 
   HomeState copyWith({
     int? offset,
     List<Pokemon>? pokemonList,
     Set<String>? selected,
-    PokemonResponse? pokemon,
+    Map<String, PokemonResponse>? pokemonMap,
   }) {
     return HomeState(
       offset: offset ?? this.offset,
       pokemonList: pokemonList ?? this.pokemonList,
       selected: selected ?? this.selected,
-      pokemon: pokemon ?? this.pokemon,
+      pokemonMap: pokemonMap ?? this.pokemonMap,
     );
   }
 
@@ -40,6 +40,6 @@ class HomeState extends Equatable {
         offset,
         pokemonList,
         selected,
-        pokemon,
+        pokemonMap,
       ];
 }

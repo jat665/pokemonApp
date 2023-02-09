@@ -40,37 +40,55 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   loadPokemon(HomeLoadPokemonEvent event, emit) async {
-    final request = PokemonRequest(name: event.name);
-    final response = await pokemonRepository.getPokemon(request: request);
-    emit(state.copyWith(
-      selected: {response.name},
-      pokemon: response,
+    if (!state.pokemonMap.containsKey(event.name)) {
+      final request = PokemonRequest(name: event.name);
+      final response = await pokemonRepository.getPokemon(request: request);
+      return emit(state.copyWith(
+        selected: {response.name},
+        pokemonMap: _getPokemonMapReplacing(response),
+      ));
+    }
+    return emit(state.copyWith(
+      selected: {event.name},
     ));
   }
 
   addRemoveSkill(HomeAddRemoveSkillEvent event, emit) async {
-    final stats = _getStats(event.skill);
-    final skills = _getSkills(event.skill);
+    final stats = _getStats(event);
+    final skills = _getSkills(event);
     final pokemon = PokemonResponse(
-      name: state.pokemon!.name,
+      name: state.pokemonMap[event.pokemon]!.name,
       stats: stats,
       skills: skills,
-      sprites: state.pokemon!.sprites,
+      sprites: state.pokemonMap[event.pokemon]!.sprites,
     );
-    emit(state.copyWith(pokemon: pokemon));
+    emit(state.copyWith(pokemonMap: _getPokemonMapReplacing(pokemon)));
   }
 
-  _getStats(Skill skill) {
-    if (!state.pokemon!.skills.contains(skill)) {
-      return state.pokemon!.getStatsAdding(skill);
+  Map<String, PokemonResponse> _getPokemonMapReplacing(PokemonResponse pokemon) {
+    Map<String, PokemonResponse> pokemonMap = {};
+    pokemonMap[pokemon.name] = pokemon;
+    for (String key in state.pokemonMap.keys) {
+      if (key != pokemon.name) {
+        pokemonMap[key] = state.pokemonMap[key]!;
+      }
     }
-    return state.pokemon!.getStatsRemoving(skill);
+    return pokemonMap;
   }
 
-  _getSkills(Skill skill) {
-    if (!state.pokemon!.skills.contains(skill)) {
-      return state.pokemon!.getSkillAdding(skill);
+  _getStats(HomeAddRemoveSkillEvent event) {
+    final pokemon = state.pokemonMap[event.pokemon];
+    if (!pokemon!.skills.contains(event.skill)) {
+      return pokemon.getStatsAdding(event.skill);
     }
-    return state.pokemon!.getSkillRemoving(skill);
+    return pokemon.getStatsRemoving(event.skill);
+  }
+
+  _getSkills(HomeAddRemoveSkillEvent event) {
+    final pokemon = state.pokemonMap[event.pokemon];
+    if (!pokemon!.skills.contains(event.skill)) {
+      return pokemon.getSkillAdding(event.skill);
+    }
+    return pokemon.getSkillRemoving(event.skill);
   }
 }
