@@ -31,7 +31,7 @@ class HomeState extends Equatable {
       offset: offset ?? this.offset,
       pokemonList: pokemonList ?? this.pokemonList,
       selected: selected ?? this.selected,
-      pokemon: pokemon,
+      pokemon: pokemon ?? this.pokemon,
     );
   }
 

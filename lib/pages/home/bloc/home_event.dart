@@ -10,3 +10,9 @@ class HomeLoadPokemonEvent extends HomeEvent {
 
   HomeLoadPokemonEvent({required this.name});
 }
+
+class HomeAddRemoveSkillEvent extends HomeEvent {
+  final Skill skill;
+
+  HomeAddRemoveSkillEvent({required this.skill});
+}

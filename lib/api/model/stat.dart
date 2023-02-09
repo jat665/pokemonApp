@@ -4,7 +4,7 @@ class Stat {
   static const defence = 2;
   static const speed = 5;
 
-  final int baseStat;
+  int baseStat;
 
   Stat({
     required this.baseStat,

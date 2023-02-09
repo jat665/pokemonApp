@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import 'package:meta/meta.dart';
+import 'package:pokemon/api/model/skill.dart';
 import 'package:pokemon/api/request/pokemon_list_request.dart';
 import 'package:pokemon/constants.dart';
 
@@ -23,6 +24,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }) : super(const HomeState.initial()) {
     on<HomeLoadScreenEvent>(loadScreen);
     on<HomeLoadPokemonEvent>(loadPokemon);
+    on<HomeAddRemoveSkillEvent>(addRemoveSkill);
   }
 
   loadScreen(HomeLoadScreenEvent event, emit) async {
@@ -44,5 +46,31 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       selected: {response.name},
       pokemon: response,
     ));
+  }
+
+  addRemoveSkill(HomeAddRemoveSkillEvent event, emit) async {
+    final stats = _getStats(event.skill);
+    final skills = _getSkills(event.skill);
+    final pokemon = PokemonResponse(
+      name: state.pokemon!.name,
+      stats: stats,
+      skills: skills,
+      sprites: state.pokemon!.sprites,
+    );
+    emit(state.copyWith(pokemon: pokemon));
+  }
+
+  _getStats(Skill skill) {
+    if (!state.pokemon!.skills.contains(skill)) {
+      return state.pokemon!.getStatsAdding(skill);
+    }
+    return state.pokemon!.getStatsRemoving(skill);
+  }
+
+  _getSkills(Skill skill) {
+    if (!state.pokemon!.skills.contains(skill)) {
+      return state.pokemon!.getSkillAdding(skill);
+    }
+    return state.pokemon!.getSkillRemoving(skill);
   }
 }
