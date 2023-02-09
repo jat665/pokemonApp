@@ -35,21 +35,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       pokemonList: response.results,
       selected: {pokemon},
       offset: state.offset + Constants.pokemonLimit,
+      loading: true,
     ));
     await loadPokemon(HomeLoadPokemonEvent(name: pokemon), emit);
   }
 
   loadPokemon(HomeLoadPokemonEvent event, emit) async {
+    emit(state.copyWith(loading: true));
     if (!state.pokemonMap.containsKey(event.name)) {
       final request = PokemonRequest(name: event.name);
       final response = await pokemonRepository.getPokemon(request: request);
       return emit(state.copyWith(
         selected: {response.name},
         pokemonMap: _getPokemonMapReplacing(response),
+        loading: false,
       ));
     }
     return emit(state.copyWith(
       selected: {event.name},
+      loading: false,
     ));
   }
 
